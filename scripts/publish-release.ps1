@@ -33,10 +33,20 @@ foreach ($asset in $assets) {
   }
 }
 
-gh release view $Tag --repo $Repo *> $null
-if ($LASTEXITCODE -ne 0) {
-  gh release create $Tag --repo $Repo --title $Title --notes-file $notes
+$viewOutput = & gh release view $Tag --repo $Repo --json tagName 2>&1
+$releaseExists = $LASTEXITCODE -eq 0
+if (-not $releaseExists) {
+  & gh release create $Tag --repo $Repo --title $Title --notes-file $notes
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to create release $Tag"
+  }
 }
 
-gh release upload $Tag --repo $Repo @assets --clobber
-gh release view $Tag --repo $Repo --json tagName,url,assets | Out-Host
+& gh release upload $Tag --repo $Repo @assets --clobber
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to upload release assets for $Tag"
+}
+& gh release view $Tag --repo $Repo --json tagName,url,assets | Out-Host
+if ($LASTEXITCODE -ne 0) {
+  throw "Failed to verify release $Tag"
+}
