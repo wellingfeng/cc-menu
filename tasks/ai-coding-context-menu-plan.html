@@ -1,0 +1,2477 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CC Menu：AI 编程右键菜单工具规划</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111418;
+      --panel: #181d23;
+      --panel-2: #20262e;
+      --panel-3: #252c35;
+      --line: #39424e;
+      --line-soft: #2a313a;
+      --text: #eef3f8;
+      --muted: #aeb9c7;
+      --subtle: #7f8a99;
+      --blue: #4ea1ff;
+      --green: #55c883;
+      --amber: #f1b94c;
+      --red: #f07178;
+      --violet: #a58cff;
+      --cyan: #4cc9d8;
+      --menu-blue: #0874d1;
+      --shadow: 0 16px 50px rgba(0, 0, 0, .32);
+      --radius: 8px;
+      --font: "Microsoft YaHei UI", "Segoe UI", Arial, sans-serif;
+      --mono: "Cascadia Code", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.62;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      border-right: 1px solid var(--line-soft);
+      background: #0f1216;
+      overflow: auto;
+    }
+
+    .brand {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--panel);
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toc {
+      display: grid;
+      gap: 4px;
+    }
+
+    .toc a {
+      color: var(--muted);
+      display: block;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .toc a:hover {
+      color: var(--text);
+      background: var(--panel);
+      text-decoration: none;
+    }
+
+    main {
+      padding: 36px clamp(20px, 4vw, 56px) 72px;
+      max-width: 1380px;
+      width: 100%;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 30px;
+    }
+
+    .hero-copy {
+      padding: 34px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .kicker {
+      margin: 0 0 10px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .hero h2 {
+      margin: 0 0 16px;
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .hero-copy p {
+      max-width: 760px;
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #12161b;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex: 0 0 auto;
+    }
+
+    .dot.green { background: var(--green); }
+    .dot.amber { background: var(--amber); }
+    .dot.red { background: var(--red); }
+    .dot.violet { background: var(--violet); }
+    .dot.cyan { background: var(--cyan); }
+
+    .hero-side {
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 18px;
+      display: grid;
+      align-content: center;
+      gap: 14px;
+    }
+
+    .window-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 0 2px 4px;
+    }
+
+    .window-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .window-buttons span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--line);
+      display: block;
+    }
+
+    .context-demo {
+      position: relative;
+      min-height: 480px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, #171b21 0 45%, #13171c 45% 100%);
+      overflow: hidden;
+      padding: 18px;
+    }
+
+    .fake-file {
+      width: 210px;
+      height: 30px;
+      border: 1px solid #2c3540;
+      background: #1c222a;
+      border-radius: 4px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .menu-stack {
+      position: absolute;
+      left: 26px;
+      bottom: 22px;
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .menu {
+      width: 318px;
+      padding: 6px;
+      border: 1px solid #4b4f57;
+      border-radius: 8px;
+      background: #252525;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      color: #f4f4f4;
+    }
+
+    .submenu {
+      width: 300px;
+      margin-bottom: 12px;
+    }
+
+    .menu-item {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .menu-item.selected {
+      background: var(--menu-blue);
+    }
+
+    .menu-sep {
+      height: 1px;
+      background: #3d3d3d;
+      margin: 5px 2px;
+    }
+
+    .mi-icon {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      display: inline-block;
+      border: 1px solid rgba(255, 255, 255, .25);
+    }
+
+    .i-terminal { background: #5c6670; }
+    .i-claude { background: var(--amber); }
+    .i-codex { background: var(--blue); }
+    .i-gemini { background: var(--violet); }
+    .i-gateway { background: var(--green); }
+    .i-session { background: var(--cyan); }
+    .i-settings { background: #d0d7de; }
+
+    .arrow {
+      color: #d7d7d7;
+      font-size: 15px;
+    }
+
+    section {
+      margin-top: 28px;
+      padding-top: 18px;
+    }
+
+    section > h2 {
+      margin: 0 0 14px;
+      font-size: 26px;
+      letter-spacing: 0;
+    }
+
+    section > p {
+      color: var(--muted);
+      max-width: 980px;
+      margin: 0 0 16px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid.cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 18px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .card p {
+      margin: 0;
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    li + li {
+      margin-top: 6px;
+    }
+
+    .spec-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .spec-list li {
+      display: grid;
+      grid-template-columns: 132px minmax(0, 1fr);
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .spec-list li:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .label {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 800px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line-soft);
+      padding: 11px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text);
+      background: #151a20;
+      font-weight: 700;
+    }
+
+    td {
+      color: var(--muted);
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code,
+    pre {
+      font-family: var(--mono);
+    }
+
+    code {
+      color: #dbeafe;
+      background: #0d1722;
+      border: 1px solid #1d3044;
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 14px;
+      color: #dce7f3;
+      background: #0c1117;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .menu-plan {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .menu-tree {
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 16px;
+    }
+
+    .tree-node {
+      position: relative;
+      display: grid;
+      gap: 8px;
+      padding-left: 16px;
+      margin-top: 8px;
+    }
+
+    .tree-node::before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 0;
+      bottom: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 6px 8px;
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: #151a20;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tree-item.primary {
+      color: var(--text);
+      border-color: #315070;
+      background: #102034;
+    }
+
+    .tree-item.manage {
+      border-color: #4b3f23;
+      background: #211b10;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .legend span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .diagram {
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .architecture {
+      min-width: 840px;
+      display: grid;
+      grid-template-columns: 1fr 80px 1.2fr 80px 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .arch-col {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .arch-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #151a20;
+      padding: 12px;
+      min-height: 74px;
+    }
+
+    .arch-box strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .arch-box span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .arch-box.blue { border-color: #315070; background: #102034; }
+    .arch-box.green { border-color: #2f6749; background: #112318; }
+    .arch-box.amber { border-color: #665229; background: #241d10; }
+    .arch-box.red { border-color: #663a40; background: #281719; }
+
+    .arrow-col {
+      display: grid;
+      place-items: center;
+      color: var(--subtle);
+      font-size: 30px;
+    }
+
+    .settings-mock {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      min-height: 560px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .settings-nav {
+      background: #12161b;
+      border-right: 1px solid var(--line-soft);
+      padding: 16px;
+    }
+
+    .settings-nav h3,
+    .settings-body h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-item.active {
+      color: var(--text);
+      background: #17304b;
+      border: 1px solid #315070;
+    }
+
+    .settings-body {
+      padding: 20px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .search {
+      min-width: 240px;
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #10151b;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: #151a20;
+      color: var(--text);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      border-color: #2f6749;
+      background: #13331f;
+      color: #d6ffe5;
+    }
+
+    .account-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .account-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #151a20;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .account-card header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .account-card h4 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 7px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .badge.green {
+      border-color: #2f6749;
+      color: #bdf8d2;
+      background: #102318;
+    }
+
+    .badge.amber {
+      border-color: #665229;
+      color: #ffe0a2;
+      background: #241d10;
+    }
+
+    .badge.blue {
+      border-color: #315070;
+      color: #c7e4ff;
+      background: #102034;
+    }
+
+    .small-meta {
+      color: var(--subtle);
+      font-size: 12px;
+    }
+
+    .agent-card-board,
+    .agent-editor-modal,
+    .sessions-screen {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #151a20;
+      padding: 14px;
+    }
+
+    .agent-card-board {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .agent-group {
+      display: grid;
+      gap: 10px;
+    }
+
+    .agent-group-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .agent-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .agent-card {
+      position: relative;
+      display: grid;
+      gap: 9px;
+      min-height: 158px;
+      padding: 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #10151b;
+    }
+
+    .agent-card.primary {
+      border-color: #2f6749;
+      background: #102318;
+    }
+
+    .agent-card.unavailable {
+      border-color: #663a40;
+      background: #261719;
+    }
+
+    .agent-card.hovered {
+      border-color: #6b7380;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+      transform: translateY(-1px);
+    }
+
+    .agent-card.primary::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 6px;
+      border-radius: 8px 0 0 8px;
+      background: var(--green);
+    }
+
+    .agent-card header,
+    .agent-editor-modal header,
+    .sessions-screen header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .agent-card h4,
+    .agent-editor-modal h4,
+    .sessions-screen h4 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .agent-card-actions {
+      display: flex;
+      gap: 6px;
+      min-height: 30px;
+      align-items: center;
+    }
+
+    .agent-action {
+      min-width: 32px;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #20262d;
+      color: var(--muted);
+      font-size: 12px;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .agent-action.primary {
+      min-width: 54px;
+      border-color: #315070;
+      background: #102034;
+      color: #c7e4ff;
+    }
+
+    .agent-action.danger {
+      color: #ffb7be;
+      border-color: #663a40;
+    }
+
+    .agent-editor-modal {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+      margin-top: 14px;
+      background: #0c1015;
+      border-color: #315070;
+      box-shadow: var(--shadow);
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: #10151b;
+      padding: 10px;
+      min-height: 62px;
+    }
+
+    .field label {
+      display: block;
+      color: var(--subtle);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .field strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cap-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .cap {
+      border: 1px solid var(--line-soft);
+      border-radius: 6px;
+      background: #10151b;
+      padding: 8px;
+      min-height: 54px;
+    }
+
+    .cap strong {
+      display: block;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .cap span {
+      color: var(--subtle);
+      font-size: 11px;
+    }
+
+    .sync-strip {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid #4b3f23;
+      border-radius: 8px;
+      background: #211b10;
+      padding: 12px;
+    }
+
+    .sessions-screen {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .sessions-layout {
+      position: relative;
+      display: block;
+    }
+
+    .session-tree {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #10151b;
+      padding: 14px;
+      min-height: 440px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .session-agent {
+      display: grid;
+      gap: 8px;
+    }
+
+    .session-agent-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .session-leaf {
+      display: grid;
+      grid-template-columns: 20px minmax(260px, 1.2fr) minmax(260px, 1fr) 140px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px 10px 18px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: #151a20;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .session-leaf.active {
+      border-color: #315070;
+      background: #102034;
+    }
+
+    .session-leaf strong {
+      color: var(--text);
+      display: block;
+      font-size: 14px;
+    }
+
+    .session-leaf span {
+      color: var(--subtle);
+      font-size: 12px;
+    }
+
+    .session-status {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.12);
+    }
+
+    .session-status.idle {
+      background: var(--blue);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.12);
+    }
+
+    .session-status.stale {
+      background: var(--amber);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+    }
+
+    .session-action-menu {
+      position: absolute;
+      right: 28px;
+      top: 138px;
+      width: 330px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #151a20;
+      padding: 7px;
+      box-shadow: var(--shadow);
+    }
+
+    .session-action-menu .menu-item {
+      background: transparent;
+      border-color: transparent;
+      min-height: 34px;
+    }
+
+    .session-inline-note {
+      border: 1px solid #4b3f23;
+      border-radius: 8px;
+      background: #211b10;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+      max-width: 880px;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .flow-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #151a20;
+      padding: 14px;
+    }
+
+    .flow-card strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .flow-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .flow-arrow {
+      color: var(--subtle);
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .milestones {
+      display: grid;
+      gap: 12px;
+    }
+
+    .milestone {
+      display: grid;
+      grid-template-columns: 70px minmax(0, 1fr);
+      gap: 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 14px;
+    }
+
+    .m-number {
+      width: 48px;
+      height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      background: #151a20;
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    .milestone h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+    }
+
+    .milestone p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .callout {
+      border: 1px solid #665229;
+      border-left: 4px solid var(--amber);
+      border-radius: var(--radius);
+      background: #20190f;
+      padding: 15px 16px;
+      color: #ffe9bd;
+    }
+
+    .callout p {
+      margin: 0;
+      color: #ffe9bd;
+    }
+
+    .refs {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .top-link {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    @media (max-width: 1100px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .toc {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero,
+      .menu-plan,
+      .grid.cols-2,
+      .grid.cols-3,
+      .grid.cols-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .context-demo {
+        min-height: 520px;
+      }
+
+      .menu-stack {
+        left: 14px;
+        right: 14px;
+        overflow: auto;
+      }
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 24px 14px 56px;
+      }
+
+      .hero-copy {
+        padding: 22px;
+      }
+
+      .toc {
+        grid-template-columns: 1fr;
+      }
+
+      .settings-mock,
+      .account-grid,
+      .agent-card-grid,
+      .field-grid,
+      .cap-grid,
+      .session-leaf,
+      .flow-row {
+        grid-template-columns: 1fr;
+      }
+
+      .settings-nav {
+        border-right: 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .flow-arrow {
+        transform: rotate(90deg);
+      }
+
+      .menu,
+      .submenu {
+        width: 286px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page" id="top">
+    <aside class="sidebar" aria-label="目录">
+      <div class="brand">
+        <div class="brand-mark">CC</div>
+        <div>
+          <h1>CC Menu 规划</h1>
+          <p>AI 编程右键菜单、Rust Gateway、会话兼容与统一设置中心。</p>
+        </div>
+      </div>
+      <nav class="toc">
+        <a href="#overview">产品目标</a>
+        <a href="#menu">右键菜单</a>
+        <a href="#settings">Settings 与 Agent</a>
+        <a href="#sessions-ui">Sessions 界面</a>
+        <a href="#gateway">Rust Gateway</a>
+        <a href="#sessions">会话索引与迁移</a>
+        <a href="#architecture">技术架构</a>
+        <a href="#requirements">需求清单</a>
+        <a href="#milestones">实现工作包</a>
+        <a href="#goal">/goal 执行说明</a>
+        <a href="#risks">风险与问题</a>
+        <a href="#references">参考资料</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="hero" id="overview">
+        <div class="hero-copy">
+          <p class="kicker">Product Plan</p>
+          <h2>面向 AI 编程的跨平台右键菜单工具</h2>
+          <p>
+            CC Menu 参考 TortoiseGit 的菜单分层，但默认一级菜单更克制：只保留 Claude Code、Codex、Gemini 和 CC-Menu。
+            其他动作进入 CC-Menu 二级菜单；同时把 Claude Code Desktop、Codex Desktop、Gemini 等账号实时切换项直接展开在二级菜单中。
+            一级菜单的 Claude/Codex/Gemini 是原生默认启动，不走 Gateway；二级菜单中的启动和账号渠道切换才走 Gateway 注入。
+            Agent、菜单生成规则、会话扫描、Gateway 和其他偏好都进入统一 Settings。
+            核心实现使用 Rust，目标是启动快、切换快、会话可迁移，并从第一天就把 Windows 和 macOS 的平台差异隔离在适配层。
+          </p>
+          <div class="status-row" aria-label="关键能力">
+            <span class="pill"><span class="dot green"></span>一级菜单默认 4 项</span>
+            <span class="pill"><span class="dot"></span>Rust Gateway 多渠道路由</span>
+            <span class="pill"><span class="dot cyan"></span>Agent 动态生成菜单</span>
+            <span class="pill"><span class="dot amber"></span>Desktop 账号实时切换</span>
+            <span class="pill"><span class="dot violet"></span>跨渠道自动接续</span>
+            <span class="pill"><span class="dot red"></span>Windows + macOS 适配</span>
+          </div>
+        </div>
+
+        <div class="hero-side" aria-label="右键菜单预览">
+          <div class="window-title">
+            <span>Explorer context menu preview</span>
+            <span class="window-buttons"><span></span><span></span><span></span></span>
+          </div>
+          <div class="context-demo">
+            <div class="fake-file">E:\work\server-relay</div>
+            <div class="menu-stack">
+              <div class="menu">
+                <div class="menu-item"><span></span><span>查看</span><span class="arrow">›</span></div>
+                <div class="menu-item"><span></span><span>排序方式</span><span class="arrow">›</span></div>
+                <div class="menu-item"><span></span><span>刷新</span><span></span></div>
+                <div class="menu-sep"></div>
+                <div class="menu-item"><span class="mi-icon i-terminal"></span><span>在终端中打开</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-claude"></span><span>Open Claude Code Here</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-codex"></span><span>Open Codex Here</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-gemini"></span><span>Open Gemini CLI Here</span><span></span></div>
+                <div class="menu-item selected"><span class="mi-icon i-settings"></span><span>CC-Menu</span><span class="arrow">›</span></div>
+              </div>
+              <div class="menu submenu">
+                <div class="menu-item"><span class="mi-icon i-settings"></span><span>Start with Options</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-session"></span><span>Sessions</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-settings"></span><span>Sync Agents from CC-Switch</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-settings"></span><span>Sync Menus</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-settings"></span><span>Settings</span><span></span></div>
+                <div class="menu-sep"></div>
+                <div class="menu-item"><span class="mi-icon i-claude"></span><span>Claude Code · SSSAi</span><span>●</span></div>
+                <div class="menu-item"><span class="mi-icon i-claude"></span><span>Claude Code · 官方</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-claude"></span><span>Claude Code · Work</span><span></span></div>
+                <div class="menu-sep"></div>
+                <div class="menu-item"><span class="mi-icon i-codex"></span><span>Codex · SSSAi</span><span></span></div>
+                <div class="menu-item"><span class="mi-icon i-codex"></span><span>Codex · 官方</span><span>●</span></div>
+                <div class="menu-item"><span class="mi-icon i-codex"></span><span>Codex · Work</span><span></span></div>
+                <div class="menu-sep"></div>
+                <div class="menu-item"><span class="mi-icon i-gemini"></span><span>Gemini · Personal</span><span>●</span></div>
+                <div class="menu-item"><span class="mi-icon i-gemini"></span><span>Gemini · Workspace</span><span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <div class="grid cols-4">
+          <article class="card">
+            <h3>一级菜单要短</h3>
+            <p>默认只保留 4 个入口：Claude Code、Codex、Gemini、CC-Menu。前三个用 CLI/Desktop 默认方式启动，不走 Gateway。</p>
+          </article>
+          <article class="card">
+            <h3>后台服务做重活</h3>
+            <p>会话扫描、Gateway、Agent 同步、日志都放在 service，Explorer/Finder 扩展只做轻量分发。</p>
+          </article>
+          <article class="card">
+            <h3>统一 Settings</h3>
+            <p>Agents、Context Menu、会话扫描、Gateway、Settings 五个 tab 覆盖配置，不散成多个窗口。</p>
+          </article>
+          <article class="card">
+            <h3>会话自动桥接</h3>
+            <p>用户只选择用哪个 agent 打开；同渠道直接 resume，跨渠道由后台自动判断和接续上下文。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="menu">
+        <h2>右键菜单规划</h2>
+        <p>
+          右键菜单采用 TortoiseGit 式分层，但默认一级菜单只保留 4 项：Claude Code、Codex、Gemini、CC-Menu。
+          其他动作都进入 CC-Menu 二级菜单。Desktop 账号实时切换不做三级菜单，而是按 Agent 分组直接展开到二级菜单，并用分割线拆分。
+          启动路径有硬边界：一级菜单的 Claude/Codex/Gemini 只做原生默认启动；CC-Menu 二级菜单里的 Start with Options 和账号渠道项通过 Gateway 启动或切换。
+          Windows 上接入 Explorer context menu，macOS 上接入 Finder 的 Services/Quick Actions/Finder Sync Extension。
+          菜单项由 Settings -> Agents 的 agent 配置动态生成；新增、修改、删除 agent 后，后台服务重新生成菜单缓存。
+        </p>
+        <div class="menu-plan">
+          <div class="menu-tree">
+            <div class="tree-item primary"><span class="mi-icon i-claude"></span>Open Claude Code Here</div>
+            <div class="tree-item primary"><span class="mi-icon i-codex"></span>Open Codex Here</div>
+            <div class="tree-item primary"><span class="mi-icon i-gemini"></span>Open Gemini CLI Here</div>
+            <div class="tree-item manage"><span class="mi-icon i-settings"></span>CC-Menu</div>
+            <div class="tree-node">
+              <div class="tree-item">Start with Options</div>
+              <div class="tree-item">Sessions</div>
+              <div class="tree-item">Sync Agents from CC-Switch</div>
+              <div class="tree-item">Sync Menus</div>
+              <div class="tree-item">Settings</div>
+              <div class="tree-item">──── Claude Code accounts</div>
+              <div class="tree-item">Claude Code · SSSAi</div>
+              <div class="tree-item">Claude Code · 官方</div>
+              <div class="tree-item">Claude Code · Work</div>
+              <div class="tree-item">──── Codex accounts</div>
+              <div class="tree-item">Codex · SSSAi</div>
+              <div class="tree-item">Codex · 官方</div>
+              <div class="tree-item">Codex · Work</div>
+              <div class="tree-item">──── Gemini accounts</div>
+              <div class="tree-item">Gemini · Personal</div>
+              <div class="tree-item">Gemini · Workspace</div>
+            </div>
+            <div class="legend">
+              <span><span class="dot green"></span> 高频动作</span>
+              <span><span class="dot amber"></span> 管理动作</span>
+              <span><span class="dot"></span> 可展开菜单</span>
+            </div>
+          </div>
+
+          <div class="grid">
+            <article class="card">
+              <h3>一级菜单</h3>
+              <ul>
+                <li><strong>Open Claude Code Here</strong>：在当前目录用 Claude Code 默认配置启动，不走 Gateway。</li>
+                <li><strong>Open Codex Here</strong>：在当前目录用 Codex 默认配置启动，不走 Gateway。</li>
+                <li><strong>Open Gemini CLI Here</strong>：在当前目录用 Gemini CLI 默认配置启动，不走 Gateway。</li>
+                <li><strong>CC-Menu</strong>：进入启动参数、会话、cc-switch Agent 同步和统一 Settings。</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>CC-Menu 二级菜单</h3>
+              <ul>
+                <li><strong>Start with Options</strong>：打开 Gateway 启动参数对话框，选择 agent、模型渠道、缓存、TTS 等参数，并注入本地 Gateway 配置。</li>
+                <li><strong>Sessions</strong>：打开独立 Sessions 界面，按当前目录过滤会话。</li>
+                <li><strong>Sync Agents from CC-Switch</strong>：从 cc-switch 同步 agent/profile 信息，合并到 Agents tab。</li>
+                <li><strong>Sync Menus</strong>：按当前已配置的大模型渠道账号重新生成右键菜单缓存，并刷新 Explorer/Finder 菜单适配层。</li>
+                <li><strong>Settings</strong>：打开统一 Settings，配置 Agents、Context Menu、会话扫描、Gateway 和其他设置。</li>
+                <li><strong>Claude Code accounts</strong>：SSSAi、官方、Work 等配置直接显示在二级菜单，点击即切换 Gateway route，并让 Claude Code Desktop/CLI 新会话使用该 route。</li>
+                <li><strong>Codex accounts</strong>：SSSAi、官方、Work 等配置直接显示在二级菜单，点击即切换 Gateway route，并让 Codex Desktop/CLI 新会话使用该 route。</li>
+                <li><strong>Gemini accounts</strong>：Personal、Workspace 等配置直接显示在二级菜单，点击即切换当前 Gemini Gateway route。</li>
+              </ul>
+            </article>
+            <div class="callout">
+              <p>
+                约束：Explorer/Finder 菜单打开不能等待会话扫描、网络请求或 Agent 验证。
+                菜单数据来自后台服务写好的轻量缓存；agent 或账号配置变更后由 service 自动重建缓存，用户也可以点 Sync Menus 手动刷新。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid cols-2" style="margin-top: 16px;">
+          <article class="card">
+            <h3>Windows 菜单适配</h3>
+            <ul>
+              <li>优先支持 Explorer 传统 context menu 和 Windows 11 compact menu。</li>
+              <li>Shell extension 只取路径、读缓存、调用 broker。</li>
+              <li>启动 terminal 支持 Windows Terminal、PowerShell 7、cmd 和自定义模板。</li>
+              <li>密钥优先进入 Windows Credential Manager/DPAPI。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>macOS 菜单适配</h3>
+            <ul>
+              <li>第一版 macOS 可用 Finder Quick Actions/Services 做低风险入口。</li>
+              <li>增强版使用 Finder Sync Extension 提供更贴近右键菜单的体验。</li>
+              <li>启动 terminal 支持 Terminal.app、iTerm2、Warp 和自定义命令。</li>
+              <li>密钥进入 Keychain，后台服务用 launchd agent 管理。</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="settings">
+        <h2>Settings 与 Agent 配置界面</h2>
+        <p>
+          除了会话有自己的独立界面，其他管理界面尽量都收进 Settings。Agent 是核心 tab：
+          它决定有哪些 agent、每个 agent 如何启动、绑定哪个 provider/gateway 配置、是否显示在一级菜单。
+          新增、修改、删除 agent 后，右键菜单自动同步刷新。
+        </p>
+
+        <div class="settings-mock" aria-label="Settings Agents UI mock">
+          <aside class="settings-nav">
+            <h3>Settings</h3>
+            <div class="nav-item active">Agents <span>5</span></div>
+            <div class="nav-item">Context Menu <span></span></div>
+            <div class="nav-item">会话扫描 <span></span></div>
+            <div class="nav-item">Gateway <span></span></div>
+            <div class="nav-item">Settings <span></span></div>
+          </aside>
+
+          <div class="settings-body">
+            <div class="toolbar">
+              <div>
+                <h3>Agents</h3>
+                <div class="small-meta">右键菜单由 enabled agents 动态生成 · 默认一级菜单锁定 Claude/Codex/Gemini/CC-Menu</div>
+              </div>
+              <div class="btn-row">
+                <span class="btn primary">Add Agent</span>
+                <span class="btn">Duplicate</span>
+                <span class="btn">Sync CC-Switch</span>
+              </div>
+              <div class="search">Search agents, commands, providers...</div>
+            </div>
+
+            <div class="agent-card-board" aria-label="Agents card board">
+              <div class="agent-group">
+                <div class="agent-group-title">
+                  <span>Default Primary Agents</span>
+                  <span class="small-meta">cc-tab local style · grouped provider cards</span>
+                </div>
+                <div class="agent-card-grid">
+                  <article class="agent-card primary hovered">
+                    <header>
+                      <div>
+                        <h4>Claude Code</h4>
+                        <div class="small-meta">Claude · CC-Switch profile · claude-code.stdin</div>
+                      </div>
+                      <span class="badge green">primary</span>
+                    </header>
+                    <div class="small-meta">Primary menu: native default launch · Gateway route available in CC-Menu</div>
+                    <div class="small-meta">Capabilities: native prompt, native approval, auto handoff</div>
+                    <div class="agent-card-actions">
+                      <span class="agent-action primary">启用</span>
+                      <span class="agent-action">✎</span>
+                      <span class="agent-action">⧉</span>
+                      <span class="agent-action">✓</span>
+                      <span class="agent-action">⌘</span>
+                      <span class="agent-action danger">×</span>
+                    </div>
+                  </article>
+
+                  <article class="agent-card primary">
+                    <header>
+                      <div>
+                        <h4>Codex</h4>
+                        <div class="small-meta">OpenAI · CC-Switch profile · codex.app-server</div>
+                      </div>
+                      <span class="badge green">primary</span>
+                    </header>
+                    <div class="small-meta">Primary menu: native default launch · Gateway route available in CC-Menu</div>
+                    <div class="small-meta">Capabilities: structured resume, app-server, auto handoff</div>
+                    <div class="agent-card-actions">
+                      <span class="agent-action primary">使用中</span>
+                      <span class="agent-action">✎</span>
+                      <span class="agent-action">⧉</span>
+                      <span class="agent-action">✓</span>
+                      <span class="agent-action">⌘</span>
+                      <span class="agent-action danger">×</span>
+                    </div>
+                  </article>
+
+                  <article class="agent-card primary">
+                    <header>
+                      <div>
+                        <h4>Gemini CLI</h4>
+                        <div class="small-meta">Google · CC-Switch profile · gemini.cli</div>
+                      </div>
+                      <span class="badge green">primary</span>
+                    </header>
+                    <div class="small-meta">Primary menu: native default launch · Gateway route available in CC-Menu</div>
+                    <div class="small-meta">Capabilities: prompt, terminal, context handoff</div>
+                    <div class="agent-card-actions">
+                      <span class="agent-action primary">启用</span>
+                      <span class="agent-action">✎</span>
+                      <span class="agent-action">⧉</span>
+                      <span class="agent-action">✓</span>
+                      <span class="agent-action">⌘</span>
+                      <span class="agent-action danger">×</span>
+                    </div>
+                  </article>
+
+                  <article class="agent-card unavailable">
+                    <header>
+                      <div>
+                        <h4>Local Qwen Review</h4>
+                        <div class="small-meta">Custom · manual config · pty.generic</div>
+                      </div>
+                      <span class="badge amber">disabled</span>
+                    </header>
+                    <div class="small-meta">Model: qwen-coder · endpoint missing · menu: hidden</div>
+                    <div class="small-meta">Executable path is not configured</div>
+                    <div class="agent-card-actions">
+                      <span class="agent-action primary">启用</span>
+                      <span class="agent-action">✎</span>
+                      <span class="agent-action">⧉</span>
+                      <span class="agent-action">✓</span>
+                      <span class="agent-action">⌘</span>
+                      <span class="agent-action danger">×</span>
+                    </div>
+                  </article>
+                </div>
+              </div>
+
+              <div class="agent-group">
+                <div class="agent-group-title">
+                  <span>Extra Agents</span>
+                  <span class="small-meta">默认不进入一级菜单，可在 Start with Options 里选择</span>
+                </div>
+                <div class="agent-card-grid">
+                  <article class="agent-card">
+                    <header>
+                      <div>
+                        <h4>OpenCode</h4>
+                        <div class="small-meta">OpenCode · opencode.cli</div>
+                      </div>
+                      <span class="badge blue">hidden</span>
+                    </header>
+                    <div class="small-meta">Model: provider default · endpoint: local gateway</div>
+                    <div class="small-meta">Menu visibility: not primary, selectable in options dialog</div>
+                    <div class="agent-card-actions">
+                      <span class="agent-action primary">启用</span>
+                      <span class="agent-action">✎</span>
+                      <span class="agent-action">⧉</span>
+                      <span class="agent-action">✓</span>
+                      <span class="agent-action">⌘</span>
+                      <span class="agent-action danger">×</span>
+                    </div>
+                  </article>
+                </div>
+              </div>
+
+              <div class="agent-editor-modal" aria-label="Agent edit modal mock">
+                <header>
+                  <div>
+                    <h4>编辑 Agent 参数 · Claude Code</h4>
+                    <div class="small-meta">点击卡片 hover 小按钮 ✎ 后弹出。参考 cc-tab local 的编辑供应商覆盖面板。</div>
+                  </div>
+                  <span class="badge blue">modal</span>
+                </header>
+
+                <div class="field-grid">
+                  <div class="field">
+                    <label>Display Name</label>
+                    <strong>Claude Code</strong>
+                  </div>
+                  <div class="field">
+                    <label>Agent ID</label>
+                    <strong>claude-code</strong>
+                  </div>
+                  <div class="field">
+                    <label>Adapter</label>
+                    <strong>claude-code.stdin · L3 preferred</strong>
+                  </div>
+                  <div class="field">
+                    <label>Executable</label>
+                    <strong>claude</strong>
+                  </div>
+                  <div class="field">
+                    <label>Provider Source</label>
+                    <strong>Claude Main · synced from CC-Switch</strong>
+                  </div>
+                  <div class="field">
+                    <label>Gateway Route</label>
+                    <strong>Claude Sonnet via local gateway</strong>
+                  </div>
+                  <div class="field">
+                    <label>Default Arguments</label>
+                    <strong>--model sonnet --permission-mode acceptEdits</strong>
+                  </div>
+                  <div class="field">
+                    <label>Menu Placement</label>
+                    <strong>Primary menu · locked default</strong>
+                  </div>
+                </div>
+
+                <div class="cap-grid">
+                  <div class="cap"><strong>prompt</strong><span>native</span></div>
+                  <div class="cap"><strong>resume</strong><span>native if same channel</span></div>
+                  <div class="cap"><strong>planMode</strong><span>emulated</span></div>
+                  <div class="cap"><strong>approval</strong><span>native</span></div>
+                  <div class="cap"><strong>diff</strong><span>emulated via git broker</span></div>
+                  <div class="cap"><strong>terminal</strong><span>PTY fallback</span></div>
+                  <div class="cap"><strong>handoff</strong><span>auto bridge</span></div>
+                  <div class="cap"><strong>desktop</strong><span>restart_required possible</span></div>
+                </div>
+
+                <div class="btn-row">
+                  <span class="btn primary">Save</span>
+                  <span class="btn">Test Agent</span>
+                  <span class="btn">Open Terminal</span>
+                  <span class="btn">Cancel</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="sync-strip" style="margin-top: 14px;">
+              <div>
+                <strong>Menu sync rule</strong>
+                <div class="small-meta">Agent create/update/delete -> validate command -> update agent registry -> rebuild menu cache -> notify Explorer/Finder adapter.</div>
+              </div>
+              <span class="badge green">auto sync</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid cols-3" style="margin-top: 16px;">
+          <article class="card">
+            <h3>Agents</h3>
+            <p>配置 Agent 的 command、adapter、provider、默认参数、能力协商、菜单位置。右键菜单从这里动态生成。</p>
+          </article>
+          <article class="card">
+            <h3>Context Menu</h3>
+            <p>配置默认一级菜单锁定项、每个 agent 的可见性，以及 CC-Menu 中账号实时切换分组的排序。</p>
+          </article>
+          <article class="card">
+            <h3>Gateway</h3>
+            <p>配置 provider、routing strategy、credential 引用和本地 OpenAI-compatible endpoint。</p>
+          </article>
+        </div>
+
+        <div class="table-wrap" style="margin-top: 16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Settings Tab</th>
+                <th>职责</th>
+                <th>是否独立界面</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Agents</td>
+                <td>Agent 增删改查、cc-switch 同步合并、adapter 能力、启动参数、provider 绑定、菜单位置。</td>
+                <td>否，放 Settings。</td>
+              </tr>
+              <tr>
+                <td>Context Menu</td>
+                <td>一级菜单固定项、agent 可见性、菜单缓存刷新、平台菜单投影。</td>
+                <td>否，放 Settings。</td>
+              </tr>
+              <tr>
+                <td>会话扫描</td>
+                <td>配置扫描路径、频率、归档目录、当前目录过滤和兼容性策略。</td>
+                <td>否，放 Settings。</td>
+              </tr>
+              <tr>
+                <td>Gateway</td>
+                <td>provider、credential 引用、fixed/fallback/race/broadcast 策略、active route 切换。</td>
+                <td>否，配置放 Settings。</td>
+              </tr>
+              <tr>
+                <td>Settings</td>
+                <td>终端模板、日志等级、Desktop 集成、更新策略和诊断入口。</td>
+                <td>否，放 Settings。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <details style="margin-top: 16px;">
+          <summary class="muted">Agents tab 中的 CC-Switch 同步预览</summary>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>来源</th>
+                  <th>动作</th>
+                  <th>安全策略</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Claude Code · Claude Main</td>
+                  <td>CC-Switch profile</td>
+                  <td>Update existing agent provider metadata</td>
+                  <td>secret 写入 Credential Manager / Keychain</td>
+                </tr>
+                <tr>
+                  <td>Gemini CLI · Personal</td>
+                  <td>CC-Switch profile</td>
+                  <td>Add disabled agent variant</td>
+                  <td>缺 token，不写明文配置</td>
+                </tr>
+                <tr>
+                  <td>Codex · OpenAI Legacy</td>
+                  <td>CC-Switch profile</td>
+                  <td>Conflict, user decides in Agents tab</td>
+                  <td>dry-run 预览后再合并</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section id="sessions-ui">
+        <h2>Sessions 独立界面</h2>
+        <p>
+          会话不塞进 Settings。它是高频工作界面，应该独立打开，承载当前目录过滤、搜索和用不同 Agent 接续。
+          因为已经按当前目录过滤，树形只需要两级：Agent -> 会话。用户不需要看到导入/导出动作，只看到“用某个 Agent 打开”。
+        </p>
+
+        <div class="sessions-screen">
+          <header>
+            <div>
+              <h4>Sessions · E:\work\server-relay</h4>
+              <div class="small-meta">Filtered by current directory · 18 matched · scanner fresh 12s ago</div>
+            </div>
+            <div class="btn-row">
+              <span class="btn">Scan Now</span>
+              <span class="btn">All Agents</span>
+              <span class="btn">Collapse All</span>
+            </div>
+          </header>
+
+          <div class="toolbar">
+            <div class="search">Search title, branch, session id, agent...</div>
+            <div class="btn-row">
+              <span class="btn">Compatible First</span>
+              <span class="btn">Last 7 days</span>
+            </div>
+          </div>
+
+          <div class="sessions-layout">
+            <div class="session-tree" aria-label="Agent session tree">
+              <div class="session-agent">
+                <div class="session-agent-title"><span>▾ Codex</span><span class="badge green">8</span></div>
+                <div class="session-leaf active">
+                  <span class="session-status"></span>
+                  <div><strong>server-relay-push-objects</strong><span>Codex · worktree/server-relay · 31 messages</span></div>
+                  <span>E:\work\server-relay · providerSessionId=cx_8d32...</span>
+                  <span>35 min ago</span>
+                </div>
+                <div class="session-leaf">
+                  <span class="session-status idle"></span>
+                  <div><strong>typed-router-cleanup</strong><span>Codex · main · 19 messages</span></div>
+                  <span>E:\work\server-relay · providerSessionId=cx_12af...</span>
+                  <span>2h ago</span>
+                </div>
+              </div>
+
+              <div class="session-agent">
+                <div class="session-agent-title"><span>▾ Claude Code</span><span class="badge green">6</span></div>
+                <div class="session-leaf">
+                  <span class="session-status"></span>
+                  <div><strong>auth-refactor</strong><span>Claude Code · main · 42 messages</span></div>
+                  <span>E:\work\server-relay · providerSessionId=cc_9ab1...</span>
+                  <span>12 min ago</span>
+                </div>
+                <div class="session-leaf">
+                  <span class="session-status idle"></span>
+                  <div><strong>gateway-spike</strong><span>Claude Code · feature/gateway · 27 messages</span></div>
+                  <span>E:\work\server-relay · providerSessionId=cc_76f0...</span>
+                  <span>yesterday</span>
+                </div>
+              </div>
+
+              <div class="session-agent">
+                <div class="session-agent-title"><span>▾ Gemini CLI</span><span class="badge blue">4</span></div>
+                <div class="session-leaf">
+                  <span class="session-status stale"></span>
+                  <div><strong>docs-cleanup</strong><span>Gemini CLI · docs branch · summary available</span></div>
+                  <span>E:\work\server-relay · providerSessionId=gm_44c2...</span>
+                  <span>yesterday</span>
+                </div>
+              </div>
+
+              <div class="session-inline-note">
+                界面只负责浏览和定位。默认启动动作放在具体会话的右键菜单中，和 cc-tab local 的 Sessions 二级树形保持一致。
+              </div>
+            </div>
+
+            <div class="session-action-menu" aria-label="Session row right-click menu">
+              <div class="menu-item"><span class="mi-icon i-codex"></span><span>Resume with Codex</span><span></span></div>
+              <div class="menu-item"><span class="mi-icon i-claude"></span><span>Open with Claude Code</span><span></span></div>
+              <div class="menu-item"><span class="mi-icon i-gemini"></span><span>Open with Gemini CLI</span><span></span></div>
+              <div class="menu-item"><span class="mi-icon i-gateway"></span><span>Open with Gateway Route...</span><span></span></div>
+              <div class="menu-sep"></div>
+              <div class="menu-item"><span class="mi-icon i-settings"></span><span>Reveal Source File</span><span></span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gateway">
+        <h2>Rust Gateway 设计</h2>
+        <p>
+          Gateway 不是完整复刻 LiteLLM，而是为本机 AI 编程工作流做一个轻量、高性能、可热切换的路由层。
+          实现目标一次性覆盖 OpenAI-compatible endpoint、Anthropic、Gemini、Local 和自定义 provider adapter，不按产品阶段拆交付。
+        </p>
+        <div class="grid cols-2">
+          <article class="card">
+            <h3>路由策略</h3>
+            <ul>
+              <li><strong>fixed</strong>：固定 provider 和 model。</li>
+              <li><strong>fallback</strong>：失败或超时后切换到备用渠道。</li>
+              <li><strong>race</strong>：多个 provider 并发，最快成功者返回。</li>
+              <li><strong>broadcast</strong>：多个 agent 同时执行，用于审查或方案对比。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>技术选型</h3>
+            <ul>
+              <li>Async runtime：Tokio。</li>
+              <li>HTTP server：Axum 或 Hyper。</li>
+              <li>HTTP client：Reqwest。</li>
+              <li>Config：Serde + TOML/JSON。</li>
+              <li>Local DB：SQLite。</li>
+              <li>Credential：Windows Credential Manager 或 DPAPI。</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="table-wrap" style="margin-top: 16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Profile</th>
+                <th>Agent Source</th>
+                <th>Channel</th>
+                <th>Strategy</th>
+                <th>菜单行为</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Claude Sonnet</td>
+                <td>Claude Main</td>
+                <td>Anthropic Messages</td>
+                <td>fixed</td>
+                <td>二级菜单账号项或 Start with Options 启动时走该 route。</td>
+              </tr>
+              <tr>
+                <td>Codex GPT-5.4</td>
+                <td>Codex Work</td>
+                <td>OpenAI-compatible</td>
+                <td>fixed</td>
+                <td>CC-Menu 启动 Codex 时注入本地 gateway base URL；一级菜单不注入。</td>
+              </tr>
+              <tr>
+                <td>Claude + Codex Race</td>
+                <td>Claude Main + Codex Work</td>
+                <td>multi</td>
+                <td>race</td>
+                <td>仅用于二级菜单 Gateway 启动或 Gateway profile 调用。</td>
+              </tr>
+              <tr>
+                <td>Broadcast Review</td>
+                <td>multi</td>
+                <td>multi</td>
+                <td>broadcast</td>
+                <td>通过 Gateway 让多个 agent 并行审查，再汇总。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="sessions">
+        <h2>会话索引与自动接续流程</h2>
+        <p>
+          会话扫描由独立后台服务完成，类似 Everything 的轻量索引思路。
+          右键菜单只读缓存，按当前目录过滤会话。用户只看见 “Resume/Open with Agent”，兼容性判断和上下文桥接都在后台完成。
+        </p>
+
+        <div class="grid cols-2">
+          <article class="card">
+            <h3>Session Indexer</h3>
+            <ul>
+              <li>Rust 后台服务监控 Claude、Codex、Gemini 等会话目录。</li>
+              <li>默认每 5 分钟触发一次全量轻扫描。</li>
+              <li>目录发生修改时通过 watcher 触发增量扫描，写入 SQLite 索引。</li>
+              <li>记录 session ID、channel、project path、title、last active、compatibility。</li>
+              <li>不可解析格式只记录路径、mtime、大小和渠道猜测。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>内部标准化上下文</h3>
+            <pre>.cc-menu/sessions/&lt;channel&gt;/&lt;session-id&gt;/
+  manifest.json
+  transcript.md
+  transcript.jsonl
+  files-touched.json
+  summary.md</pre>
+          </article>
+        </div>
+
+        <div class="grid cols-2" style="margin-top: 16px;">
+          <article class="card">
+            <h3>Rust 扫描服务性能策略</h3>
+            <ul>
+              <li>使用 <code>notify</code> 监听目录变化，Windows 走 ReadDirectoryChangesW，macOS 走 FSEvents。</li>
+              <li>文件事件进入 bounded channel，按目录和 session id 做 300-800ms debounce，避免编辑器连续写入导致重复解析。</li>
+              <li>5 分钟 timer 只做轻扫描：比较 mtime、size、inode/file id、hash hint，变化后才解析正文。</li>
+              <li>SQLite 使用 WAL，索引字段覆盖 workspace hash、agent、provider session id、last active、source path。</li>
+              <li>解析任务限制并发，低优先级运行；右键菜单只读缓存，不等待扫描。</li>
+              <li>扫描器必须可重建索引，数据库损坏时删除重建，不影响源会话文件。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>扫描触发流程</h3>
+            <pre>startup -> load watched roots
+       -> build watchers
+       -> initial light scan
+
+every 5 minutes -> light scan roots
+file changed    -> debounce -> incremental scan
+config changed  -> rebuild watchers
+manual Scan Now -> priority scan current workspace</pre>
+          </article>
+        </div>
+
+        <div class="diagram" style="margin-top: 16px;">
+          <div class="flow">
+            <div class="flow-card">
+              <strong>用户选择会话 + 目标 Agent</strong>
+              <span>来自 CC-Menu -> Sessions 或 Sessions 独立界面。入口文案是 Open with / Resume with。</span>
+            </div>
+            <div class="flow-row">
+              <div class="flow-card">
+                <strong>同渠道且有 native session ID?</strong>
+                <span>Claude 到 Claude，Codex 到 Codex，且目标 CLI 支持 resume。</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-card">
+                <strong>Native Resume</strong>
+                <span>直接调用目标 CLI 的 resume 能力。</span>
+              </div>
+            </div>
+            <div class="flow-row">
+              <div class="flow-card">
+                <strong>源 Agent 支持官方上下文转储?</strong>
+                <span>内部优先使用 /export 或等价能力，用户界面不暴露该步骤。</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-card">
+                <strong>Automatic Handoff</strong>
+                <span>生成标准化上下文，再交给目标 Agent 接续。</span>
+              </div>
+            </div>
+            <div class="flow-row">
+              <div class="flow-card">
+                <strong>源会话文件可解析?</strong>
+                <span>能读取历史消息、文件变更、最后目标。</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-card">
+                <strong>Context Replay</strong>
+                <span>整理 Markdown/JSONL，让新 agent 读取上下文继续。</span>
+              </div>
+            </div>
+            <div class="flow-row">
+              <div class="flow-card">
+                <strong>不可解析或目标不支持直接接续?</strong>
+                <span>只保留归档路径和摘要。</span>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-card">
+                <strong>New Agent Reads Archive</strong>
+                <span>启动新会话，并提示读取归档。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>技术架构图</h2>
+        <p>
+          Explorer/Finder 扩展必须极简，因为它跑在系统文件管理器相关流程里。
+          所有网络、扫描、数据库和配置重活都放入后台服务。跨平台核心用 Rust，共享 agent-registry、menu-cache、gateway、session-indexer、agent-sync、launch broker 的大部分逻辑。
+        </p>
+        <div class="diagram">
+          <div class="architecture" role="img" aria-label="CC Menu 技术架构图">
+            <div class="arch-col">
+              <div class="arch-box blue">
+                <strong>Platform Menu Extension</strong>
+                <span>Windows Explorer 或 macOS Finder 获取路径，读取缓存菜单，派发动作。</span>
+              </div>
+              <div class="arch-box">
+                <strong>Platform Registration</strong>
+                <span>Windows context menu；macOS Services/Quick Actions/Finder Sync。</span>
+              </div>
+            </div>
+            <div class="arrow-col">→</div>
+            <div class="arch-col">
+              <div class="arch-box green">
+                <strong>cc-menu-service.exe</strong>
+                <span>常驻后台服务，提供 IPC、缓存、日志、健康检查。</span>
+              </div>
+              <div class="arch-box">
+                <strong>agent-registry + menu-cache</strong>
+                <span>Agent 配置是菜单源；变更后重建右键菜单缓存。</span>
+              </div>
+              <div class="arch-box">
+                <strong>session-indexer</strong>
+                <span>定时扫描和 watcher，写入 SQLite。</span>
+              </div>
+              <div class="arch-box">
+                <strong>gateway-server</strong>
+                <span>OpenAI-compatible endpoint，多 provider 路由。</span>
+              </div>
+              <div class="arch-box">
+                <strong>agent-sync</strong>
+                <span>从 cc-switch dry-run 同步 Agent/provider 配置，secret 进系统凭据。</span>
+              </div>
+              <div class="arch-box">
+                <strong>launch broker</strong>
+                <span>安全组装参数、cwd、env、terminal 启动。</span>
+              </div>
+            </div>
+            <div class="arrow-col">→</div>
+            <div class="arch-col">
+              <div class="arch-box amber">
+                <strong>cc-menu-ui.exe</strong>
+                <span>Start Options、Sessions、Settings、Dashboard。</span>
+              </div>
+              <div class="arch-box red">
+                <strong>External CLIs</strong>
+                <span>Claude Code、Codex、Gemini CLI、自定义 CLI。</span>
+              </div>
+              <div class="arch-box">
+                <strong>Desktop Integrations</strong>
+                <span>Claude Code Desktop、Codex Desktop 的 profile 注入。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid cols-2" style="margin-top: 16px;">
+          <article class="card">
+            <h3>实时切换策略</h3>
+            <ul>
+              <li>第三方 CLI/Desktop 尽量连接稳定本地 endpoint：<code>http://127.0.0.1:&lt;port&gt;/v1</code>。</li>
+              <li>切换 profile 时由 gateway 即时改路由，不频繁改写第三方静态配置。</li>
+              <li>必须读本地配置文件的工具，启动前生成临时配置并注入。</li>
+              <li>已运行 Desktop 无法热更新时标记 <code>restart_required</code>。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>安全边界</h3>
+            <ul>
+              <li>API key/token 不写入普通配置文件和日志。</li>
+              <li>所有 command template 参数数组化，不拼接未校验字符串。</li>
+              <li>SQLite 索引可重建，不能成为唯一数据源。</li>
+              <li>Shell extension 禁止网络请求和会话扫描。</li>
+            </ul>
+          </article>
+        </div>
+
+        <section style="margin-top: 18px; padding-top: 0;">
+          <h2>跨平台分层</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>层</th>
+                  <th>共享能力</th>
+                  <th>Windows 实现</th>
+                  <th>macOS 实现</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Menu Adapter</td>
+                  <td>菜单描述模型、action ID、路径上下文、agent menu projection</td>
+                  <td>Explorer shell extension / registry integration</td>
+                  <td>Finder Quick Actions、Services、Finder Sync Extension</td>
+                </tr>
+                <tr>
+                  <td>Service Manager</td>
+                  <td>cc-menu-service lifecycle、health、IPC</td>
+                  <td>Windows Service 或 user startup task</td>
+                  <td>launchd user agent</td>
+                </tr>
+                <tr>
+                  <td>Credential Store</td>
+                  <td>credential_ref 抽象，不存明文 secret</td>
+                  <td>Windows Credential Manager / DPAPI</td>
+                  <td>macOS Keychain</td>
+                </tr>
+                <tr>
+                  <td>Terminal Launcher</td>
+                  <td>cwd、env、参数数组、安全启动模板</td>
+                  <td>Windows Terminal、PowerShell、cmd</td>
+                  <td>Terminal.app、iTerm2、Warp</td>
+                </tr>
+                <tr>
+                  <td>File Watching</td>
+                  <td>会话目录 watcher + periodic scan</td>
+                  <td>ReadDirectoryChangesW / notify crate</td>
+                  <td>FSEvents / notify crate</td>
+                </tr>
+                <tr>
+                  <td>UI Shell</td>
+                  <td>Settings、Start Options、Sessions 业务逻辑</td>
+                  <td>Tauri / native webview / egui 其一</td>
+                  <td>同一套 Tauri/native webview 优先复用</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section id="requirements">
+        <h2>需求清单</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>需求</th>
+                <th>验收方式</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FR-1</td>
+                <td>Windows/macOS 文件管理器菜单默认只显示 Claude Code、Codex、Gemini、CC-Menu 四个入口。</td>
+                <td>安装后未自定义时，一级菜单不出现 Resume、Options、Gateway、Sessions 等额外项。</td>
+              </tr>
+              <tr>
+                <td>FR-2</td>
+                <td>支持一级菜单按原生默认方式启动 Claude Code、Codex、Gemini CLI。</td>
+                <td>点击后 terminal cwd 为右键目录，CLI/Desktop 使用自身默认配置启动，不注入 Gateway base URL 或账号 route。</td>
+              </tr>
+              <tr>
+                <td>FR-3</td>
+                <td>CC-Menu 二级菜单支持带参数启动、preset 保存、账号实时切换和手动同步菜单。</td>
+                <td>Start with Options 能选择 agent、model、权限、effort、cache、TTS，并通过 Gateway 启动；Claude Code/Codex/Gemini 账号分组直接显示在二级菜单；Sync Menus 能重建菜单缓存。</td>
+              </tr>
+              <tr>
+                <td>FR-4</td>
+                <td>Rust Gateway 支持 fixed、fallback、race、broadcast。</td>
+                <td>每个策略有独立集成测试和失败路径日志。</td>
+              </tr>
+              <tr>
+                <td>FR-5</td>
+                <td>从 cc-switch 同步 Agent/provider 配置。</td>
+                <td>同步前 dry-run 预览新增、更新、冲突、跳过项，并合并到 Settings -> Agents。</td>
+              </tr>
+              <tr>
+                <td>FR-6</td>
+                <td>统一 Settings 管理 Agents、Context Menu、会话扫描、Gateway 和其他设置。</td>
+                <td>除 Sessions 浏览界面外，所有配置入口深链到 Settings 对应 tab。</td>
+              </tr>
+              <tr>
+                <td>FR-7</td>
+                <td>Rust 后台服务定时扫描和索引多渠道会话。</td>
+                <td>默认每 5 分钟轻扫描；目录变化触发 watcher 增量扫描；Sessions 独立界面按当前目录过滤；扫描不阻塞菜单。</td>
+              </tr>
+              <tr>
+                <td>FR-8</td>
+                <td>跨渠道会话接续前自动判断兼容性。</td>
+                <td>用户从会话右键菜单选择 Resume/Open with 目标 Agent；后台决定 native resume、上下文转储、context replay 或新 Agent 读取摘要。</td>
+              </tr>
+              <tr>
+                <td>FR-9</td>
+                <td>Claude Code Desktop 和 Codex Desktop 账号尽量实时切换。</td>
+                <td>点击 CC-Menu 二级菜单账号项后，切换本地 Gateway route，新会话立即使用目标配置；不能热切换的运行中应用显示 restart_required。</td>
+              </tr>
+              <tr>
+                <td>FR-10</td>
+                <td>平台相关能力必须通过 adapter 抽象隔离。</td>
+                <td>核心 gateway、session、agent、profile 逻辑不依赖 Windows/macOS 专有 API。</td>
+              </tr>
+              <tr>
+                <td>FR-11</td>
+                <td>Agent 或大模型渠道账号新增、修改、删除必须同步右键菜单。</td>
+                <td>保存配置后自动验证 command、更新 registry、重建 menu cache，并在 Explorer/Finder 中反映；点击 Sync Menus 可手动按当前配置重新生成。</td>
+              </tr>
+              <tr>
+                <td>FR-12</td>
+                <td>Agent 配置界面必须采用卡片式管理，并包含 adapter、provider、默认参数、能力协商和菜单位置。</td>
+                <td>Settings -> Agents 显示分组卡片；hover 小按钮支持启用、编辑、复制、测试、打开终端、删除；编辑按钮打开参数弹窗。</td>
+              </tr>
+              <tr>
+                <td>FR-13</td>
+                <td>/goal 必须一次性完成开发、自测、GitHub public 提交和 Release 安装包。</td>
+                <td>GitHub public 仓库存在完整源码；Release 附带安装程序；安装、菜单注册、service 启动、Sync Menus、卸载均自测通过。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="milestones">
+        <h2>实现工作包</h2>
+        <p>
+          这里不是产品分期或 MVP 规划。后续用 /goal 实现时，目标是一次性完成完整产品；下面只是内部工程拆分，方便并行开发、测试和验收。
+        </p>
+        <div class="milestones">
+          <article class="milestone">
+            <div class="m-number">W1</div>
+            <div>
+              <h3>跨平台菜单和启动</h3>
+              <p>Windows Explorer 与 macOS Finder 菜单适配，默认一级菜单仅 Claude/Codex/Gemini/CC-Menu；前三个入口按原生默认方式启动，不走 Gateway。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W2</div>
+            <div>
+              <h3>Settings Agents 卡片和菜单同步</h3>
+              <p>Settings -> Agents 分组卡片、hover 小按钮、参数弹窗、agent registry、menu cache、agent 增删改后自动同步右键菜单。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W3</div>
+            <div>
+              <h3>Agent 同步和实时切换</h3>
+              <p>从 cc-switch dry-run 同步 Agent/provider 配置、凭据加密存储、Claude Code/Codex/Gemini 账号分组、二级菜单 Gateway route 实时切换。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W4</div>
+            <div>
+              <h3>会话索引和自动接续</h3>
+              <p>session-indexer、SQLite 会话库、当前目录过滤、Sessions 独立界面、Agent -> 会话树、会话右键 Open with 自动接续。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W5</div>
+            <div>
+              <h3>Rust Gateway 完整目标</h3>
+              <p>OpenAI-compatible endpoint、Anthropic/Gemini/Local/custom provider adapters、fixed/fallback/race/broadcast、仅为二级菜单启动和 Desktop route 切换注入 gateway 配置。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W6</div>
+            <div>
+              <h3>兼容性和上下文桥接</h3>
+              <p>native resume 判断、内部标准化上下文、context replay、新 Agent 读取摘要、失败路径诊断。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W7</div>
+            <div>
+              <h3>Desktop 实时切换增强</h3>
+              <p>Claude/Codex Desktop profile 管理、临时配置注入、restart_required 检测、Dashboard 和诊断。</p>
+            </div>
+          </article>
+          <article class="milestone">
+            <div class="m-number">W8</div>
+            <div>
+              <h3>macOS 适配</h3>
+              <p>Finder Quick Actions/Services/Finder Sync 路径、launchd agent、Keychain secret store、Terminal.app/iTerm2/Warp 启动模板。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="goal">
+        <h2>/goal 一次性执行说明</h2>
+        <p>
+          这段是给后续新开的 CLI 直接执行用的任务书。执行目标不是做 demo，也不是中途停在规划或半成品；
+          要完成整套开发、自测、发布和安装包验证，并提交到 GitHub public 仓库。
+        </p>
+
+        <div class="grid cols-2">
+          <article class="card">
+            <h3>完整实现范围</h3>
+            <ul>
+              <li>Rust workspace：service、gateway、session-indexer、agent-registry、menu-cache、launch-broker、platform adapters。</li>
+              <li>Windows Explorer 右键菜单：一级原生默认启动；CC-Menu 二级 Gateway 启动、账号切换、Sync Menus、Sessions、Settings。</li>
+              <li>macOS 预留并实现可用路径：Services/Quick Actions/Finder Sync adapter、launchd、Keychain、Terminal/iTerm2/Warp 模板。</li>
+              <li>Settings UI：Agents 卡片、hover 小按钮、参数弹窗、Context Menu、会话扫描、Gateway、Settings tab。</li>
+              <li>Sessions UI：当前目录过滤，宽二级树 Agent -> 会话，行右键菜单负责 Resume/Open with。</li>
+              <li>Rust Gateway：OpenAI-compatible endpoint、Anthropic/Gemini/Local/custom adapters、fixed/fallback/race/broadcast。</li>
+              <li>Rust 会话扫描服务：5 分钟默认轻扫描、文件 watcher 增量扫描、SQLite WAL、可重建索引。</li>
+              <li>cc-switch 同步：dry-run、冲突处理、secret 进 Credential Manager/DPAPI 或 Keychain。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>不中断执行规则</h3>
+            <ul>
+              <li>不要只生成文档或脚手架；必须完成可运行产品。</li>
+              <li>不要把 Rust Gateway、Sessions、Installer 拆成后续任务；都要在同一个 /goal 内完成。</li>
+              <li>遇到缺少第三方真实账号时，用 fixture provider 和 fake CLI 完成端到端测试，同时保留真实配置入口。</li>
+              <li>所有平台相关能力必须有 adapter 抽象；Windows 先重点自测，macOS 路径至少完成编译/结构和文档化验证。</li>
+              <li>提交前必须跑自动化测试、UI 冒烟测试、安装包安装/卸载测试和菜单缓存生成测试。</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="table-wrap" style="margin-top: 16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>自测项</th>
+                <th>必须验证</th>
+                <th>通过标准</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Rust 单元/集成测试</td>
+                <td>gateway routing、menu projection、session scan、config validation、credential refs。</td>
+                <td><code>cargo test --workspace</code> 全绿。</td>
+              </tr>
+              <tr>
+                <td>菜单流程</td>
+                <td>一级菜单原生启动不注入 Gateway；二级菜单 Gateway 启动会注入 route。</td>
+                <td>fake CLI 捕获 cwd/env/args，与预期一致。</td>
+              </tr>
+              <tr>
+                <td>会话扫描</td>
+                <td>5 分钟 timer、watcher 事件、debounce、增量更新、SQLite 重建。</td>
+                <td>修改 fixture 会话文件后索引自动更新，右键菜单不阻塞。</td>
+              </tr>
+              <tr>
+                <td>Sessions UI</td>
+                <td>当前目录过滤、Agent -> 会话二级树、会话行右键菜单。</td>
+                <td>用 fixture 数据打开 UI，树和右键菜单均可操作。</td>
+              </tr>
+              <tr>
+                <td>Settings UI</td>
+                <td>Agents 卡片 hover action、编辑弹窗、Sync Agents、Sync Menus。</td>
+                <td>保存配置后菜单缓存重建，错误配置有明确提示。</td>
+              </tr>
+              <tr>
+                <td>安装包</td>
+                <td>安装、启动 service、注册菜单、卸载清理。</td>
+                <td>全流程在干净测试目录自测通过，有日志和截图/文本记录。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid cols-2" style="margin-top: 16px;">
+          <article class="card">
+            <h3>GitHub 与 Release</h3>
+            <ul>
+              <li>创建或使用 public GitHub 仓库，提交完整源码、README、架构说明、开发/打包/测试命令。</li>
+              <li>所有实现完成后提交 git commit，并 push 到 GitHub。</li>
+              <li>创建 GitHub Release，附带 Windows 安装程序；如果 macOS 包已可产出，也附带 dmg/pkg。</li>
+              <li>Release notes 写清功能、安装方式、已知限制、自测命令和测试结果摘要。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>安装程序要求</h3>
+            <ul>
+              <li>Windows 优先提供 NSIS/MSI 之一，安装 service、UI、shell extension/menu registration。</li>
+              <li>安装前检测旧版本，支持升级；卸载时移除菜单注册、service、启动项，保留用户配置需询问或文档说明。</li>
+              <li>安装包必须签名预留；没有证书时明确标记 unsigned build。</li>
+              <li>安装包自测必须覆盖安装、重启 service、打开 Settings、Sync Menus、卸载。</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="callout" style="margin-top: 16px;">
+          <p>
+            可给新 CLI 的 /goal 指令：根据 <code>tasks/ai-coding-context-menu-plan.html</code> 完整实现 CC Menu。
+            不要中途停止在计划、脚手架或半成品；完成 Rust 应用、Windows/macOS 适配、Settings、Sessions、Gateway、会话扫描服务、安装程序、自测、GitHub public 仓库提交和 GitHub Release。
+            开发完成后必须运行完整测试矩阵，并验证安装包安装、菜单注册、service 启动、Sync Menus、会话扫描、卸载流程。
+          </p>
+        </div>
+      </section>
+
+      <section id="risks">
+        <h2>风险与开放问题</h2>
+        <div class="grid cols-2">
+          <article class="card">
+            <h3>主要风险</h3>
+            <ul>
+              <li>Windows Shell extension 稳定性要求高，崩溃会影响 Explorer。</li>
+              <li>macOS Finder 扩展权限和沙盒限制更强，可能需要先用 Quick Actions/Services 降低风险。</li>
+              <li>Claude/Codex/Gemini 会话文件格式可能变化，parser 需要版本化。</li>
+              <li>Desktop 实时切换受第三方应用限制，部分场景只能保证新会话生效。</li>
+              <li>Agent 配置直接驱动菜单，如果校验不足，错误 command 会污染右键菜单或启动失败。</li>
+              <li>Gateway 容易膨胀成完整 LiteLLM 替代品，范围要锁定在本机 AI 编程启动、路由和会话接续。</li>
+              <li>cc-switch 配置格式可能变化，导入器必须先 dry-run。</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>开放问题</h3>
+            <ul>
+              <li>Windows 与 macOS 是否同一轮实现完整可用，还是 Windows 先落地、macOS 紧随。</li>
+              <li>第一版是否只支持 Claude Code、Codex、Gemini CLI？</li>
+              <li>TTS 是播报结果，还是某个特定 CLI 参数/插件？</li>
+              <li>默认 terminal 用 Windows Terminal、PowerShell 7，还是沿用 cc-tab？</li>
+              <li>macOS 默认 terminal 用 Terminal.app、iTerm2，还是 Warp？</li>
+              <li>cc-switch 配置路径和账号数据格式是否已有稳定约定？</li>
+              <li>cc-switch 同步是单向导入，还是需要双向同步？</li>
+              <li>除 Claude/Codex/Gemini 外，自定义 Agent 是否允许提升到一级菜单，还是只在 Start with Options 中选择。</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="references">
+        <h2>参考资料</h2>
+        <div class="refs">
+          <span>LiteLLM GitHub：<a href="https://github.com/BerriAI/litellm">https://github.com/BerriAI/litellm</a></span>
+          <span>Claude Code CLI reference：<a href="https://code.claude.com/docs/en/cli-reference">https://code.claude.com/docs/en/cli-reference</a></span>
+          <span>Codex CLI reference：<a href="https://developers.openai.com/codex/cli/reference">https://developers.openai.com/codex/cli/reference</a></span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <a class="top-link" href="#top" aria-label="回到顶部">↑</a>
+</body>
+</html>
