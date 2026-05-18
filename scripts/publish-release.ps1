@@ -23,9 +23,9 @@ if ([string]::IsNullOrWhiteSpace($Title)) {
 
 $notes = Join-Path $release "release-notes.md"
 $assets = @(
-  Join-Path $release "cc-menu-setup-win-x64.exe",
-  Join-Path $release "cc-menu-portable-win-x64.zip",
-  Join-Path $release "manifest.json"
+  (Join-Path $release "cc-menu-setup-win-x64.exe"),
+  (Join-Path $release "cc-menu-portable-win-x64.zip"),
+  (Join-Path $release "manifest.json")
 )
 foreach ($asset in $assets) {
   if (-not (Test-Path -LiteralPath $asset)) {
