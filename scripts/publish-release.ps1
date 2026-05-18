@@ -33,8 +33,11 @@ foreach ($asset in $assets) {
   }
 }
 
-$viewOutput = & gh release view $Tag --repo $Repo --json tagName 2>&1
+$previousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& gh release view $Tag --repo $Repo --json tagName *> $null
 $releaseExists = $LASTEXITCODE -eq 0
+$ErrorActionPreference = $previousErrorActionPreference
 if (-not $releaseExists) {
   & gh release create $Tag --repo $Repo --title $Title --notes-file $notes
   if ($LASTEXITCODE -ne 0) {
