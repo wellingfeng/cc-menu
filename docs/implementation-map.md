@@ -47,3 +47,5 @@ release\cc-menu-setup-win-x64.exe --self-test
 
 The installer self-test installs the embedded CLI into a temporary directory,
 runs `cc-menu self-test`, and removes the install directory.
+The release build also verifies the no-argument installer path creates and
+removes the HKCU Explorer context menu registry keys.

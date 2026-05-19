@@ -48,6 +48,56 @@ Compress-Archive -Path (Join-Path $dist "*") -DestinationPath (Join-Path $releas
 
 & $publicInstaller --self-test
 
+$doubleClickSmokeRoot = Join-Path $root ".cc-menu-test\installer-double-click"
+if (Test-Path -LiteralPath $doubleClickSmokeRoot) {
+  Remove-Item -LiteralPath $doubleClickSmokeRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $doubleClickSmokeRoot | Out-Null
+$doubleClickInstallDir = Join-Path $doubleClickSmokeRoot "Programs\cc-menu"
+$registryPrefix = "CCMenuBuildTest"
+$doubleClickOutput = "`r`n" | & $publicInstaller --install-dir $doubleClickInstallDir --registry-prefix $registryPrefix --wait
+if ($LASTEXITCODE -ne 0) {
+  throw "Installer no-argument smoke test failed"
+}
+$doubleClickOutputText = $doubleClickOutput -join "`n"
+if ($doubleClickOutputText -notmatch "Press Enter to close this installer") {
+  throw "Installer no-argument smoke test did not expose the double-click pause prompt"
+}
+if (-not (Test-Path -LiteralPath (Join-Path $doubleClickInstallDir "cc-menu.exe"))) {
+  throw "Installer no-argument smoke test did not install cc-menu.exe"
+}
+foreach ($key in @(
+  "HKCU\Software\Classes\Directory\Background\shell\$registryPrefix",
+  "HKCU\Software\Classes\Directory\Background\shell\$registryPrefix`Codex",
+  "HKCU\Software\Classes\Directory\shell\$registryPrefix",
+  "HKCU\Software\Classes\Directory\shell\$registryPrefix`Codex",
+  "HKCU\Software\Classes\Folder\shell\$registryPrefix",
+  "HKCU\Software\Classes\Folder\shell\$registryPrefix`Codex"
+)) {
+  reg query $key | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Installer no-argument smoke test did not create registry key: $key"
+  }
+}
+& $publicInstaller --install-dir $doubleClickInstallDir --registry-prefix $registryPrefix --uninstall --quiet
+if ($LASTEXITCODE -ne 0) {
+  throw "Installer no-argument smoke test failed to uninstall"
+}
+foreach ($key in @(
+  "HKCU\Software\Classes\Directory\Background\shell\$registryPrefix",
+  "HKCU\Software\Classes\Directory\shell\$registryPrefix",
+  "HKCU\Software\Classes\Folder\shell\$registryPrefix"
+)) {
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  reg query $key *> $null
+  $exists = $LASTEXITCODE -eq 0
+  $ErrorActionPreference = $previousErrorActionPreference
+  if ($exists) {
+    throw "Installer no-argument smoke test did not remove registry key: $key"
+  }
+}
+
 $manifest = @{
   name = "cc-menu"
   version = (cargo metadata --no-deps --format-version 1 | ConvertFrom-Json).packages[0].version
@@ -74,6 +124,8 @@ Validation completed by build script:
 - cargo test --workspace
 - scripts/self-test.ps1
 - cc-menu-setup-win-x64.exe --self-test
+- cc-menu-setup-win-x64.exe no-argument double-click smoke test with visible pause prompt
+- HKCU Explorer context menu registry create/delete verification
 "@ | Set-Content -LiteralPath (Join-Path $release "release-notes.md") -Encoding UTF8
 
 Get-ChildItem -LiteralPath $release | Format-Table Name, Length

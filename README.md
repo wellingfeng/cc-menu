@@ -44,6 +44,11 @@ powershell -ExecutionPolicy Bypass -File scripts\build-release.ps1
 The installer is a standalone executable named `cc-menu-setup-win-x64.exe`.
 Run `cc-menu-setup-win-x64.exe --self-test` to verify it can install into a
 temporary directory, execute the bundled CLI, and uninstall cleanly.
+When double-clicked with no arguments, the installer leaves its console window
+open after installation so the result and next command are visible.
+On Windows it also writes current-user Explorer context menu entries under
+`HKCU\Software\Classes\Directory\Background\shell` and
+`HKCU\Software\Classes\Directory\shell`.
 
 ## GitHub Release
 
